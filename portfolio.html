@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HackerBD - Portfolio</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0a0a0a;
+      color: #00ff41;
+      overflow-x: hidden;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0a; }
+    ::-webkit-scrollbar-thumb { background: #00ff41; border-radius: 3px; }
+
+    #canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Hero */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 8vw, 5rem);
+      text-shadow: 0 0 20px #00ff41, 0 0 40px #00ff41;
+      letter-spacing: 6px;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 1s ease;
+    }
+    .hero h1.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .hero .tagline {
+      font-size: clamp(0.9rem, 2vw, 1.3rem);
+      color: #00cc33;
+      margin-top: 1rem;
+      letter-spacing: 4px;
+      opacity: 0;
+      transition: all 1s ease 0.3s;
+    }
+    .hero .tagline.show {
+      opacity: 1;
+    }
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: #00ff41;
+      animation: blink 0.8s step-end infinite;
+      margin-left: 2px;
+    }
+    @keyframes blink {
+      50% { background: transparent; }
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: #00ff41;
+      opacity: 0.5;
+      animation: bounce 2s infinite;
+    }
+    @keyframes bounce {
+      0%,100%{transform:translateX(-50%) translateY(0)}
+      50%{transform:translateX(-50%) translateY(8px)}
+    }
+
+    /* Sections */
+    section {
+      min-height: 100vh;
+      padding: 4rem clamp(1rem, 5vw, 6rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .section-title {
+      font-size: clamp(1.3rem, 4vw, 2.5rem);
+      text-transform: uppercase;
+      letter-spacing: 8px;
+      margin-bottom: 3rem;
+      border-bottom: 1px solid #00ff4140;
+      padding-bottom: 0.7rem;
+      opacity: 0;
+      transform: translateX(-40px);
+      transition: all 0.8s ease;
+    }
+    .section-title.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* About */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.8s ease 0.2s;
+    }
+    .about-grid.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .about-card {
+      background: #00ff4108;
+      border: 1px solid #00ff4120;
+      padding: 1.8rem;
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+      transition: 0.3s;
+    }
+    .about-card:hover {
+      border-color: #00ff41;
+      box-shadow: 0 0 20px #00ff4110;
+    }
+    .about-card .label {
+      color: #008a22;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+    .about-card .value {
+      font-size: clamp(1rem, 2vw, 1.4rem);
+      margin-top: 0.5rem;
+      word-break: break-word;
+    }
+
+    /* Skills */
+    .skills-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: all 0.8s ease 0.2s;
+    }
+    .skills-wrap.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .skill-chip {
+      padding: 0.7rem 1.8rem;
+      border: 1px solid #00ff41;
+      border-radius: 30px;
+      font-size: clamp(0.8rem, 1.5vw, 1rem);
+      letter-spacing: 2px;
+      transition: 0.3s;
+    }
+    .skill-chip:hover {
+      background: #00ff41;
+      color: #0a0a0a;
+      box-shadow: 0 0 25px #00ff4160;
+      transform: translateY(-4px);
+    }
+
+    /* Contact */
+    .contact-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.8s ease 0.2s;
+    }
+    .contact-list.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.2rem 1.8rem;
+      background: #00ff4108;
+      border: 1px solid #00ff4120;
+      border-radius: 8px;
+      transition: 0.3s;
+      text-decoration: none;
+      color: #00ff41;
+    }
+    .contact-item:hover {
+      border-color: #00ff41;
+      box-shadow: 0 0 20px #00ff4110;
+      transform: translateX(8px);
+    }
+    .contact-item .icon {
+      font-size: 1.5rem;
+      width: 2rem;
+      text-align: center;
+    }
+    .contact-item .detail {
+      font-size: clamp(0.9rem, 2vw, 1.2rem);
+    }
+    .contact-item .detail small {
+      display: block;
+      color: #008a22;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Projects */
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.8s ease 0.2s;
+    }
+    .project-grid.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .project-card {
+      background: #00ff4108;
+      border: 1px solid #00ff4120;
+      padding: 1.8rem;
+      border-radius: 8px;
+      text-align: center;
+      transition: 0.3s;
+    }
+    .project-card:hover {
+      border-color: #00ff41;
+      box-shadow: 0 0 30px #00ff4110;
+      transform: translateY(-6px);
+    }
+    .project-card h3 {
+      font-size: 1rem;
+      letter-spacing: 3px;
+      margin-bottom: 0.5rem;
+    }
+    .project-card p {
+      font-size: 0.8rem;
+      color: #008a22;
+    }
+    .project-card .glow {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #008a22;
+      font-size: 0.8rem;
+      letter-spacing: 3px;
+    }
+
+    @media (max-width: 700px) {
+      .about-grid {
+        grid-template-columns: 1fr;
+      }
+      section {
+        min-height: auto;
+        padding: 3rem 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<div class="content">
+  <!-- Hero -->
+  <section class="hero">
+    <h1 id="heroTitle">&gt; HackerBD<span class="cursor"></span></h1>
+    <p class="tagline" id="heroTagline">// Digital mercenary · Code architect · Terminal dweller</p>
+    <div class="scroll-hint">▼ SCROLL ▼</div>
+  </section>
+
+  <!-- About -->
+  <section id="about">
+    <h2 class="section-title">// About</h2>
+    <div class="about-grid">
+      <div class="about-card">
+        <p class="label">Alias</p>
+        <p class="value">HackerBD</p>
+      </div>
+      <div class="about-card">
+        <p class="label">Mission</p>
+        <p class="value">Breaking limits · Building the future · One line at a time</p>
+      </div>
+      <div class="about-card">
+        <p class="label">Status</p>
+        <p class="value">Active · Ready for contracts</p>
+      </div>
+      <div class="about-card">
+        <p class="label">Philosophy</p>
+        <p class="value">Innovation through persistence. Code is poetry in motion.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Skills -->
+  <section id="skills">
+    <h2 class="section-title">// Skills</h2>
+    <div class="skills-wrap">
+      <span class="skill-chip">#Python</span>
+      <span class="skill-chip">#JavaScript</span>
+      <span class="skill-chip">#Node.js</span>
+      <span class="skill-chip">#React</span>
+      <span class="skill-chip">#Bash</span>
+      <span class="skill-chip">#Linux</span>
+      <span class="skill-chip">#Networking</span>
+      <span class="skill-chip">#Cryptography</span>
+      <span class="skill-chip">#Pentesting</span>
+      <span class="skill-chip">#Web3</span>
+    </div>
+  </section>
+
+  <!-- Projects -->
+  <section id="projects">
+    <h2 class="section-title">// Projects</h2>
+    <div class="project-grid">
+      <div class="project-card">
+        <div class="glow">&#x1F310;</div>
+        <h3>DarkNet Scanner</h3>
+        <p>Network reconnaissance &amp; vulnerability scanner</p>
+      </div>
+      <div class="project-card">
+        <div class="glow">&#x1F4BB;</div>
+        <h3>CryptoWatch</h3>
+        <p>Real-time blockchain monitoring dashboard</p>
+      </div>
+      <div class="project-card">
+        <div class="glow">&#x1F50D;</div>
+        <h3>PhishGuard</h3>
+        <p>AI-powered phishing detection toolkit</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact">
+    <h2 class="section-title">// Contact</h2>
+    <div class="contact-list">
+      <a href="tel:01828334388" class="contact-item">
+        <span class="icon">&#x1F4DE;</span>
+        <span class="detail"><small>Phone</small>01828334388</span>
+      </a>
+      <a href="mailto:fahaduli59@gmail.com" class="contact-item">
+        <span class="icon">&#x2709;</span>
+        <span class="detail"><small>Email</small>fahaduli59@gmail.com</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <p>[ HackerBD // root@localhost ] — All rights reversed</p>
+  </footer>
+</div>
+
+<script>
+  // ---- Three.js 3D Matrix Rain + Particles ----
+  const container = document.getElementById('canvas-container');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  // ---- Particles ----
+  const particleCount = 3000;
+  const positions = new Float32Array(particleCount * 3);
+  for (let i = 0; i < particleCount * 3; i++) {
+    positions[i] = (Math.random() - 0.5) * 40;
+  }
+  const particleGeo = new THREE.BufferGeometry();
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const particleMat = new THREE.PointsMaterial({
+    color: 0x00ff41,
+    size: 0.05,
+    transparent: true,
+    opacity: 0.6,
+    blending: THREE.AdditiveBlending,
+  });
+  const particles = new THREE.Points(particleGeo, particleMat);
+  scene.add(particles);
+
+  // ---- Matrix Columns ----
+  const charCount = 1500;
+  const charPositions = new Float32Array(charCount * 3);
+  const charSpeeds = new Float32Array(charCount);
+  const charSizes = new Float32Array(charCount);
+  for (let i = 0; i < charCount; i++) {
+    charPositions[i*3] = (Math.random() - 0.5) * 80;
+    charPositions[i*3+1] = (Math.random() - 0.5) * 60;
+    charPositions[i*3+2] = (Math.random() - 0.5) * 30 - 10;
+    charSpeeds[i] = 0.005 + Math.random() * 0.02;
+    charSizes[i] = 0.15 + Math.random() * 0.25;
+  }
+  const charGeo = new THREE.BufferGeometry();
+  charGeo.setAttribute('position', new THREE.BufferAttribute(charPositions, 3));
+
+  // Create a canvas texture for katakana chars
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#00ff41';
+  ctx.font = 'bold 28px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF';
+  ctx.fillText(chars, 128, 32);
+
+  const spriteTexture = new THREE.CanvasTexture(canvas);
+  const charMat = new THREE.PointsMaterial({
+    map: spriteTexture,
+    color: 0x00ff41,
+    size: 0.35,
+    transparent: true,
+    opacity: 0.25,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const charPoints = new THREE.Points(charGeo, charMat);
+  scene.add(charPoints);
+
+  camera.position.z = 15;
+
+  // ---- Mouse tracking ----
+  let mouseX = 0, mouseY = 0;
+  document.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+    mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+  });
+  document.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    mouseX = (t.clientX / window.innerWidth) * 2 - 1;
+    mouseY = -(t.clientY / window.innerHeight) * 2 + 1;
+  }, { passive: true });
+
+  // ---- Animation loop ----
+  function animate() {
+    requestAnimationFrame(animate);
+
+    // Rotate particles slowly
+    particles.rotation.x += 0.0002;
+    particles.rotation.y += 0.0003;
+
+    // Move matrix chars downward
+    const pos = charPoints.geometry.attributes.position.array;
+    for (let i = 0; i < charCount; i++) {
+      pos[i*3+1] -= charSpeeds[i];
+      if (pos[i*3+1] < -30) {
+        pos[i*3+1] = 30;
+        pos[i*3] = (Math.random() - 0.5) * 80;
+        pos[i*3+2] = (Math.random() - 0.5) * 30 - 10;
+      }
+    }
+    charPoints.geometry.attributes.position.needsUpdate = true;
+
+    // Subtle camera sway on mouse
+    camera.position.x += (mouseX * 2 - camera.position.x) * 0.02;
+    camera.position.y += (mouseY * 1.5 - camera.position.y) * 0.02;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // ---- Resize ----
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // ---- Scroll Reveal ----
+  const revealElements = document.querySelectorAll('.hero h1, .hero .tagline, .section-title, .about-grid, .skills-wrap, .project-grid, .contact-list');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('show');
+      }
+    });
+  }, { threshold: 0.2 });
+
+  revealElements.forEach(el => observer.observe(el));
+
+  // ---- Typewriter effect on hero ----
+  (function typeWriter() {
+    const h1 = document.getElementById('heroTitle');
+    const tagline = document.getElementById('heroTagline');
+    // Trigger initial show
+    setTimeout(() => {
+      h1.classList.add('show');
+    }, 300);
+    setTimeout(() => {
+      tagline.classList.add('show');
+    }, 800);
+  })();
+
+  // ---- Terminal echo effect on scroll (extra flair) ----
+  let lastScrollY = 0;
+  window.addEventListener('scroll', () => {
+    const scrollY = window.scrollY;
+    const speed = Math.abs(scrollY - lastScrollY);
+    if (speed > 5) {
+      // Subtle particle response to scroll
+      particles.rotation.z += 0.002;
+    }
+    lastScrollY = scrollY;
+  }, { passive: true });
+</script>
+</body>
+</html>
